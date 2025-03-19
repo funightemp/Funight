@@ -1,0 +1,28 @@
+# Node & Dart (Flutter)
+node_modules/
+pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/
+.idea/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+*.log
+
+# Docker
+*.env
+.dockerignore
+
+# Database
+database/data/
+database/dumps/
+
+# VSCode & MacOS
+.vscode/
+.DS_Store

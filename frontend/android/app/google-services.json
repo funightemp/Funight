@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "26861052783",
+    "project_id": "funight-383f9",
+    "storage_bucket": "funight-383f9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:26861052783:android:74151227f40f5b80d17e9a",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZSjlQv4bZeATkENgGYpptsqWBwZXpu5Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

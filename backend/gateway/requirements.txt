@@ -1,0 +1,3 @@
+fastapi
+uvicorn
+httpx  # Para comunicação com os outros microserviços
