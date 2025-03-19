@@ -1,7 +1,10 @@
 from fastapi import FastAPI
+from FastApi.routes import health
 
-app = FastAPI()
+app = FastAPI(title="FastApi App")
+
+app.include_router(health.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Microserviço de Gateway está funcionando!"}
+    return {"message": "Hello, World!"}
