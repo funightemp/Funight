@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/auth/register_screen.dart';
+import 'package:frontend/views/auth/login_screen.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -15,25 +17,25 @@ class MainScreen extends StatelessWidget {
             fit: BoxFit.cover,
           ),
 
-          // Sombra para melhorar a visibilidade do conteúdo
+          // Shadow
           Container(
             color: Colors.black.withOpacity(0.5),
           ),
 
-          // Conteúdo principal
+          // Page Content
           Column(
             children: [
-              const SizedBox(height: 80), // Espaço no topo
+              const SizedBox(height: 80), 
 
-              // Logo da aplicação
+              // App Logo
               Image.asset(
-                'assets/logo_white.png', // Adiciona a imagem do logo na pasta assets/
-                width: 900,
+                'assets/logo_white_cropped.png',
+                width: 250,
               ),
 
-              const Spacer(), // Empurra os botões para baixo
+              const Spacer(),
 
-              // Botões de Login e Registo
+              // Login and Register Buttons
               Padding(
                 padding: const EdgeInsets.only(bottom: 50), // Espaço na parte inferior
                 child: Column(
@@ -51,28 +53,32 @@ class MainScreen extends StatelessWidget {
     );
   }
 
-  // Widget separado para evitar erro de chave global duplicada
+  // Login Button
   Widget buildLoginButton(BuildContext context) {
     return SizedBox(
       width: 250,
       child: ElevatedButton(
         onPressed: () {
-          print('Login Pressionado');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+          );
         },
-        child: const Text(
-          'Login',
-        ),
+        child: const Text('Login'),
       ),
     );
   }
 
-  // Widget separado para evitar erro de chave global duplicada
+  // Register Button
   Widget buildRegisterButton(BuildContext context) {
     return SizedBox(
       width: 250,
       child: OutlinedButton(
         onPressed: () {
-          print('Botão Registrar Pressionado');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => RegisterScreen()),
+          );
         },
         child: const Text('Registar'),
       ),
