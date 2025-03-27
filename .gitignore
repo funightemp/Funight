@@ -26,3 +26,7 @@ database/dumps/
 # VSCode & MacOS
 .vscode/
 .DS_Store
+
+# Ignorar credenciais do Firebase
+firebase-adminsdk.json
+backend/noti/firebase-adminsdk.json
