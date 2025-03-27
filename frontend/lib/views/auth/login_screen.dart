@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/home/events_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -77,7 +78,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 30),
 
                 // Botão de Login
-                buildPrimaryButton('Login', () {}),
+                buildPrimaryButton('Login', () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const EventsScreen()),
+                  );
+                }),
 
                 const SizedBox(height: 10),
 

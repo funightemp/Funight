@@ -31,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () {
-                      Navigator.pop(context); 
+                      Navigator.pop(context);
                     },
                   ),
                 ),
@@ -42,10 +42,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 40),
 
-
-                buildSocialButton('Sign up with Google', 'assets/google_icon.png'),
+                buildSocialButton(
+                  'Sign up with Google',
+                  'assets/google_icon.png',
+                ),
                 const SizedBox(height: 10),
-                buildSocialButton('Sign up with Facebook', 'assets/facebook_icon.png'),
+                buildSocialButton(
+                  'Sign up with Facebook',
+                  'assets/facebook_icon.png',
+                ),
 
                 const SizedBox(height: 20),
                 buildDivider(),
@@ -85,7 +90,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           side: const BorderSide(color: Color(0xFF9747FF)),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
     );
@@ -111,7 +118,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         hintText: hint,
         filled: true,
         fillColor: Colors.transparent,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.purple)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF9747FF)),
+        ),
         prefixIcon: Icon(icon, color: Color(0xFF9747FF)),
       ),
     );
