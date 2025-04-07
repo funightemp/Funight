@@ -20,6 +20,7 @@ class Event(Base):
     description = Column(String)
     start_time = Column(DateTime)
     end_time = Column(DateTime)
+    """organizer_id = Column(Integer, ForeignKey("users.id"))"""
     
 class Reservation(Base):
     __tablename__ = 'reservations'

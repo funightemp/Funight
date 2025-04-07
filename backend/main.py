@@ -6,7 +6,7 @@ from gateway.models.schemas import UserCreate, EventBase, ReservationBase, User,
 from sqlalchemy import create_engine 
 import os
 import uvicorn
-from backend.gateway.routes import health
+from backend.gateway.routes import health, auth, events,reservations
 
 #uvicorn backend.main:app --reload --port 8000 
 #post - cria novo ...
@@ -24,6 +24,12 @@ Base.metadata.create_all(bind = engine)
 app = FastAPI(title="FastApi App")
 
 app.include_router(health.router)
+app.include_router(auth.router, tags = ["Utilizadores"])
+app.include_router(events.router, tags = ["Eventos"])
+app.include_router(reservations.router, tags = ["Reservas"])
+
+
+
 
 @app.get("/")
 def read_root():

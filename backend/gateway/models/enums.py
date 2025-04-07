@@ -2,7 +2,6 @@ import enum
 
 #Enums: tipos para uma dada categoria
 class tipeUser(str, enum.Enum):
-    admin = "admin"
     cliente = "cliente"
     
 class StatusReserva(str, enum.Enum):

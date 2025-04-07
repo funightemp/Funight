@@ -1,8 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel 
 from datetime import datetime
 from typing import List, Optional
 
+#Esquemas de Valiadação
+
 class UserBase(BaseModel):
+    id : int
     username : str
     
 class UserCreate(UserBase):
@@ -14,11 +17,18 @@ class User(UserBase):
     class Config:
         orm_mode = True
         
-class EventBase(EventBase):
+class EventBase(BaseModel):
     id : int
+    descrition : Optional[str]
+    date : str
+
+class EventResponse(EventBase):
+    id : int
+    organize_id : int
     
     class Config:
-        orm_mode = True
+        from_atributtes = True
+    
         
 class ReservationBase(BaseModel):
     user_id : int
@@ -27,6 +37,7 @@ class ReservationBase(BaseModel):
     
 class Reservation(ReservationBase):
     id: int
+    user_id : int
     class Config:
         orm_mode = True
     
