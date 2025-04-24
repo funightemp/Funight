@@ -31,6 +31,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        minSdkVersion (23)
     }
 
     buildTypes {
@@ -40,6 +41,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:32.1.1"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 }
 
 flutter {

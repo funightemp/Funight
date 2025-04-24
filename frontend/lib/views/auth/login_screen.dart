@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/views/home/events_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'package:frontend/views/home/events_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,7 +14,71 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  void _signInWithEmailAndPassword() async {
+  setState(() => _isLoading = true);
+  print("Sign in started");
+
+  try {
+  await _auth.signInWithEmailAndPassword(
+    email: _emailController.text.trim(),
+    password: _passwordController.text.trim(),
+  );
+  print('✅ Login feito com sucesso');
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => const EventsScreen()),
+  );
+} on FirebaseAuthException catch (e) {
+  print('❌ Erro no login: ${e.message}');
+  _showError(e.message ?? "Login failed");
+}
+}
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+      
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      _saveUserToFirestore(userCredential.user);
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const EventsScreen()),
+      );
+    } catch (e) {
+      _showError("Google login failed");
+    }
+  }
+
+  void _saveUserToFirestore(User? user) {
+    if (user != null) {
+      FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+        "uid": user.uid,
+        "email": user.email,
+        "name": user.displayName ?? "User",
+      }, SetOptions(merge: true));
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message, style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,100 +86,38 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Image
-          Image.asset(
-            'assets/funight_bg.png',
-            fit: BoxFit.cover,
-          ),
-
-          // Sombra para melhorar visibilidade do conteúdo
+          Image.asset('assets/funight_bg.png', fit: BoxFit.cover),
           Container(color: Colors.black.withOpacity(0.6)),
 
-          // Conteúdo principal
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
               children: [
                 const SizedBox(height: 60),
-
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context); 
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Logo
-                Image.asset(
-                  'assets/logo_white_cropped.png',
-                  width: 200,
-                ),
-
+                Image.asset('assets/logo_white_cropped.png', width: 200),
                 const SizedBox(height: 40),
 
-                // Botões Sociais
-                buildSocialButton('Login with Google', 'assets/google_icon.png'),
-                const SizedBox(height: 10),
-                buildSocialButton('Login with Facebook', 'assets/facebook_icon.png'),
+                // Login Google
+                buildSocialButton('Login with Google', 'assets/google_icon.png', _signInWithGoogle),
 
                 const SizedBox(height: 20),
-
-                // Linha separadora "OR"
-                buildDivider(),
-
-                const SizedBox(height: 20),
-
-                // Campo de E-mail
-                buildTextField('E-mail', Icons.email_outlined, false),
-
+                buildTextField(_emailController, 'E-mail', Icons.email_outlined, false),
                 const SizedBox(height: 15),
-
-                // Campo de Senha com ícone de visibilidade
-                buildPasswordField(),
+                buildTextField(_passwordController, 'Password', Icons.lock_outline, true),
 
                 const SizedBox(height: 30),
-
-                // Botão de Login
-                buildPrimaryButton('Login', () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const EventsScreen()),
-                  );
-                }),
+                buildPrimaryButton('Login', _signInWithEmailAndPassword),
 
                 const SizedBox(height: 10),
-
-                // Don´t have an account
                 TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => RegisterScreen()),
-                  );
-                  },
-                  child: const Text(
-                    'Don´t have an account? Create one now!',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  onPressed: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (context) => RegisterScreen())),
+                  child: const Text('Don´t have an account? Create one now!', style: TextStyle(color: Colors.white)),
                 ),
-
-                // Forgot Password
                 TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-                  );
-                  },
-                  child: const Text(
-                    'Forgot Your Password',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  onPressed: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (context) => ForgotPasswordScreen())),
+                  child: const Text('Forgot Your Password', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -122,11 +127,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget buildSocialButton(String text, String iconPath) {
+  Widget buildSocialButton(String text, String iconPath, VoidCallback onPressed) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: onPressed,
         icon: Image.asset(iconPath, width: 24),
         label: Text(text),
         style: OutlinedButton.styleFrom(
@@ -139,45 +144,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget buildDivider() {
-    return Row(
-      children: const [
-        Expanded(child: Divider(color: Colors.white70)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10),
-          child: Text("OR", style: TextStyle(color: Colors.white70)),
-        ),
-        Expanded(child: Divider(color: Colors.white70)),
-      ],
-    );
-  }
-
-  // e-mail Textfield
-  Widget buildTextField(String hint, IconData icon, bool obscure) {
-  return TextField(
-    obscureText: obscure,
-    style: const TextStyle(color: Colors.white), // Torna o texto digitado branco
-    decoration: InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white70), // Deixa o hint text branco acinzentado
-      filled: true,
-      fillColor: Colors.transparent,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF9747FF)),
-      ),
-      prefixIcon: Icon(icon, color: Color(0xFF9747FF)),
-    ),
-  );
-}
-
-  // Password Textfield
-  Widget buildPasswordField() {
+  Widget buildTextField(TextEditingController controller, String hint, IconData icon, bool obscure) {
     return TextField(
-      obscureText: _obscurePassword,
+      controller: controller,
+      obscureText: obscure,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        hintText: 'Enter password',
+        hintText: hint,
         hintStyle: const TextStyle(color: Colors.white70),
         filled: true,
         fillColor: Colors.transparent,
@@ -185,18 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Color(0xFF9747FF)),
         ),
-        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF9747FF)),
-        suffixIcon: IconButton(
-          icon: Icon(
-            _obscurePassword ? Icons.visibility_off : Icons.visibility,
-            color: Color(0xFF9747FF),
-          ),
-          onPressed: () {
-            setState(() {
-              _obscurePassword = !_obscurePassword;
-            });
-          },
-        ),
+        prefixIcon: Icon(icon, color: Color(0xFF9747FF)),
       ),
     );
   }
@@ -206,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
-        child: Text(text),
+        child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text(text),
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF9747FF),
           foregroundColor: Colors.white,
