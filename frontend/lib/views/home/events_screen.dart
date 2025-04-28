@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/views/profile/profile_screen.dart';
+import 'package:frontend/views/events/event_card.dart'; // Importa o EventCard
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -9,207 +9,112 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
-  int _selectedIndex = 0;
-  final List<String> categories = ["All", "Entertainment", "Fitness & Health"];
-  String selectedCategory = "All";
-
-  final List<Map<String, dynamic>> events = [
+  // Lista de eventos de exemplo (para visualização)
+  final List<Map<String, dynamic>> _eventos = [
     {
-      "title": "Spa - 50%",
-      "location": "Luxury Resort",
-      "time": "2PM - 4PM",
-      "image": "assets/placeholder_funight.png",
-      "favorite": false,
+      'title': 'Concerto de Rock',
+      'imageUrl': 'https://via.placeholder.com/150', // URL de exemplo
+      'date': '2024-07-20',
+      'location': 'Estádio Nacional',
+      'price': 25.00,
+      'description': 'Um super concerto com as melhores bandas de rock!',
     },
     {
-      "title": "Concert with a Band",
-      "location": "Downtown Arena",
-      "time": "7PM",
-      "image": "assets/placeholder_funight.png",
-      "favorite": false,
+      'title': 'Festa Eletrónica',
+      'imageUrl': 'https://via.placeholder.com/150', // URL de exemplo
+      'date': '2024-07-25',
+      'location': 'Club A',
+      'price': 15.00,
+      'description': 'A melhor festa de música eletrónica da cidade.',
     },
     {
-      "title": "Rock on the Beach",
-      "location": "A Beach Bar",
-      "time": "10PM",
-      "image": "assets/placeholder_funight.png",
-      "favorite": false,
+      'title': 'Noite de Fado',
+      'imageUrl': '', // Sem imagem
+      'date': '2024-07-28',
+      'location': 'Casa de Fados',
+      'price': null, // Gratuito
+      'description': 'Uma noite inesquecível com a alma do fado.',
     },
     {
-      "title": "Tennis Tournament",
-      "location": "City Court",
-      "time": "11AM",
-      "image": "assets/placeholder_funight.png",
-      "favorite": true,
+      'title': 'Festival de Verão',
+      'imageUrl': 'https://via.placeholder.com/150', // URL de exemplo
+      'date': '2024-08-10',
+      'location': 'Parque da Cidade',
+      'price': 50.00,
+      'description': 'O maior festival de verão com diversas atrações.',
     },
   ];
 
-  void _toggleFavorite(int index) {
-    setState(() {
-      events[index]["favorite"] = !events[index]["favorite"];
-    });
-  }
+  // Cores consistentes com o tema (substitua com suas cores reais)
+  final Color _backgroundColor = const Color(0xFF121212); // Cor de fundo escura
+  final Color _primaryColor = const Color(0xFFBB86FC); // Cor primária (ex: roxo)
+  final Color _textColor = Colors.white; // Cor do texto
+  final Color _cardColor = const Color(0xFF1E1E1E); // Cor dos cards
 
-  void _onItemTapped(int index) {
-    if (index == 4) {
-      // Redireciona para a página de perfil
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfileScreen()),
-      );
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
-  }
+  // Controlador para a barra de pesquisa
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text(
-          "Event",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFF9747FF)),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      backgroundColor: _backgroundColor, // Aplica a cor de fundo
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Filtros de categorias
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Row(
-              children:
-                  categories.map((category) {
-                    bool isSelected = category == selectedCategory;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedCategory = category;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 8,
-                        ),
-                        margin: const EdgeInsets.only(right: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Color(0xFF9747FF) : Colors.black,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white30),
-                        ),
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
-                          ),
-                        ),
+              children: [
+                Expanded(
+                  
+                  child: TextField(
+                    controller: _searchController,
+                    style: TextStyle(color: _textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Pesquisar eventos ou localização...',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    );
-                  }).toList(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: _primaryColor),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () {
+                    // TODO: Implementar a lógica para obter a localização do dispositivo
+                    print('Obter localização do dispositivo');
+                  },
+                  icon: Icon(Icons.location_on, color: _primaryColor),
+                ),
+              ],
             ),
           ),
-
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-            child: Text(
-              "Wednesday, 6th of August",
-              style: TextStyle(color: Colors.white70, fontSize: 16),
-            ),
-          ),
-
           Expanded(
             child: ListView.builder(
-              itemCount: events.length,
+              itemCount: _eventos.length,
               itemBuilder: (context, index) {
-                final event = events[index];
+                final evento = _eventos[index];
                 return Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 8,
-                  ),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.white30),
-                  ),
-                  child: Row(
-                    children: [
-                      // Imagem do evento
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
-                          event["image"],
-                          width: 70,
-                          height: 70,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-
-                      // Informações do evento
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              event["title"],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              "${event["location"]} • ${event["time"]}",
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Botão de favorito
-                      IconButton(
-                        icon: Icon(
-                          event["favorite"]
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color:
-                              event["favorite"]
-                                  ? Color(0xFF9747FF)
-                                  : Colors.white70,
-                        ),
-                        onPressed: () => _toggleFavorite(index),
-                      ),
-                    ],
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: EventCard( // Usa o EventCard
+                    title: evento['title'],
+                    imageUrl: evento['imageUrl'],
+                    date: evento['date'],
+                    location: evento['location'],
+                    price: evento['price'],
+                    description: evento['description'],
+                    backgroundColor: _cardColor, // Passa a cor do card
+                    textColor: _textColor,
+                    primaryColor: _primaryColor,
                   ),
                 );
               },
@@ -217,29 +122,7 @@ class _EventsScreenState extends State<EventsScreen> {
           ),
         ],
       ),
-
-      // Bottom Navigation Bar corrigida
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black, // Fundo preto
-        selectedItemColor: Color(0xFF9747FF),
-        unselectedItemColor: Colors.white70,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // Para manter a cor correta
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: "Event"),
-          BottomNavigationBarItem(icon: Icon(Icons.fastfood), label: "Food"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_offer),
-            label: "Deals",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.star), label: "VIP"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ), // Ícone de perfil
-        ],
-      ),
     );
   }
 }
+
