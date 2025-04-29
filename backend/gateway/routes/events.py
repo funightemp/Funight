@@ -10,19 +10,11 @@ from services.eventbrite_services import get_events_local
 
 router = APIRouter()
 
-@router.get("/events")
 
+@router.get("/events")
 def list_events(location : str = Query(..., description="Local")):
     events = get_events_local(location)
     return {"evets" : events}
 
-
-#Listar todos os eventos
-@router.get("/events", response_model= List[EventResponse])
-def get_event(event_id : int, db: Session = Depends(get_db)):
-    event = db.query(Event).filter(Event.id == event_id).first()
-    if not event:
-        raise HTTPException(status_code=404, detail = "Evento não encontrado")
-    return event
         
  
