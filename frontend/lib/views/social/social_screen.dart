@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/social/friends_screen.dart';
 
 class SocialScreen extends StatelessWidget {
   // Cores consistentes com o tema
@@ -8,8 +9,16 @@ class SocialScreen extends StatelessWidget {
 
   // Lista de amigos de exemplo
   final List<Map<String, dynamic>> _friends = [
-    {'id': 'user1', 'username': 'Amigo1', 'avatarUrl': 'https://via.placeholder.com/40'},
-    {'id': 'user2', 'username': 'Amigo2', 'avatarUrl': 'https://via.placeholder.com/40'},
+    {
+      'id': 'user1',
+      'username': 'Amigo1',
+      'avatarUrl': 'https://via.placeholder.com/40',
+    },
+    {
+      'id': 'user2',
+      'username': 'Amigo2',
+      'avatarUrl': 'https://via.placeholder.com/40',
+    },
   ];
 
   // Lista de eventos de exemplo com amigos que vão participar
@@ -58,42 +67,31 @@ class SocialScreen extends StatelessWidget {
     },
   ];
 
-  // Controlador para a barra de pesquisa
-  final TextEditingController _searchController = TextEditingController();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: TextField(
-          controller: _searchController,
+        title: Text(
+          "Social", // Removi o TextField e coloquei um título fixo
           style: TextStyle(color: _textColor),
-          decoration: InputDecoration(
-            hintText: 'Pesquisar utilizador...',
-            hintStyle: TextStyle(color: Colors.grey),
-            border: InputBorder.none, // Remove a borda
-            prefixIcon: Icon(Icons.search, color: Colors.grey),
-          ),
-          onChanged: (value) {
-            //TODO: Implementar a lógica de pesquisa de utilizadores
-            print('Pesquisar utilizador: $value');
-          },
         ),
         backgroundColor: _backgroundColor,
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
             onPressed: () {
-              // TODO: Implementar a lógica para ir para a tela de notificações
-              print('Ir para notificações');
+              // Implementa a lógica para exibir notificações
+              _showNotifications(context);
             },
           ),
           IconButton(
             icon: const Icon(Icons.people, color: Colors.white),
             onPressed: () {
-              // TODO: Implementar a lógica para ir para a tela de amigos
-              print('Ir para amigos');
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FriendsScreen()),
+              );
             },
           ),
         ],
@@ -105,8 +103,11 @@ class SocialScreen extends StatelessWidget {
   // Método para construir a lista de eventos com amigos
   Widget _buildEventosAmigosList() {
     // Filtra os eventos com base nos amigos do utilizador
-    final List<Map<String, dynamic>> eventosAmigosFiltrados = _eventosAmigos.where((evento) {
-      return evento['friends'].any((friendId) => _friends.any((friend) => friend['id'] == friendId));
+    final List<Map<String, dynamic>> eventosAmigosFiltrados =
+        _eventosAmigos.where((evento) {
+      return evento['friends'].any(
+        (friendId) => _friends.any((friend) => friend['id'] == friendId),
+      );
     }).toList();
 
     if (eventosAmigosFiltrados.isEmpty) {
@@ -144,7 +145,11 @@ class SocialScreen extends StatelessWidget {
     return names;
   }
 
-  Widget _buildEventoAmigosCard(BuildContext context, Map<String, dynamic> evento, List<String> amigosNoEvento) {
+  Widget _buildEventoAmigosCard(
+    BuildContext context,
+    Map<String, dynamic> evento,
+    List<String> amigosNoEvento,
+  ) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       elevation: 3,
@@ -196,6 +201,23 @@ class SocialScreen extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  // Método para exibir as notificações
+  void _showNotifications(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notificações'),
+        content: const Text('Aqui estão as suas notificações...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Ok'),
+          ),
+        ],
       ),
     );
   }
