@@ -8,7 +8,7 @@ from ..models.models import User
 from database import connection
 from ..models.schemas import UserCreate, UserBase
 from passlib.context import CryptContext
-from main import get_db
+from backend.main import get_db
 
 router = APIRouter()
 
@@ -62,7 +62,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = "Credenciais Inválidas")
     
     acess_token = create_access_token(data = {"sub": user.username})
-    return {"acess_token" :acess_token, "token_type":"bearer" }
+    return {"acess_token" :acess_token, "token_type": "bearer"}
 
 #Função qque obtém o utlizador autenticado
 def get_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -82,5 +82,5 @@ def get_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db))
 
 #Endpoint que obtém as informações do Utilizador logado na app
 @router.get("/me", response_model=UserBase)
-def get_me(current_user : User = Depends(get_db)):
+def get_me(current_user : User = Depends(get_db)): #se nao der mudar para get_user
     return current_user
