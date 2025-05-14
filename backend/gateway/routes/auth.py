@@ -8,7 +8,7 @@ from ..models.models import User
 from database import connection
 from ..models.schemas import UserCreate, UserBase
 from passlib.context import CryptContext
-from main import get_db
+from backend.main import get_db
 
 router = APIRouter()
 

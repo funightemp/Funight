@@ -1,14 +1,14 @@
 from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
-from gateway.models.models import User,Event, Reservation, Base
-from gateway.models.schemas import UserCreate, EventBase, ReservationBase, User, Event, Reservation
+from .gateway.models.models import User,Event, Reservation, Base
+from backend.gateway.models.schemas import UserCreate, EventBase, EventResponse, ReservationBase, User, Reservation
 from sqlalchemy import create_engine 
 import os
 import uvicorn
 from backend.gateway.routes import health, auth, events,reservations
 
-#uvicorn backend.main:app --reload --port 8000 
+#uvicorn backend.main:app --reload --port 9999 
 #post - cria novo ...
 #get - lista tudo o que está na base de dados correspondente
 
@@ -90,5 +90,5 @@ def get_users(db: Session = Depends(get_db)):
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 9999))
     uvicorn.run(app,"0.0.0.0", port=port)
