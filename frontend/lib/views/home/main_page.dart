@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/views/home/events_screen.dart';
 import 'package:frontend/views/tickets/tickets_screen.dart';
-import 'package:frontend/views/home/social_screen.dart'; // Importa a tela social
+import 'package:frontend/views/social/social_screen.dart'; // Importa a tela social
 import 'package:frontend/views/profile/profile_screen.dart'; // Importa a tela de perfil
 import 'package:frontend/views/home/settings_screen.dart'; // Importa a tela de configurações
 
