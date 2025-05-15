@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from database import connection
 from ..models.models import Reservation, Event, User
 from ..models.schemas import ReservationBase, Reservation
-from auth import get_user
+from backend.gateway.routes.auth import get_user
 from typing import List
-from main import get_db
+from backend.dependencies import get_db
 
 router = APIRouter()
 

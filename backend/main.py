@@ -1,12 +1,12 @@
 from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
-from .gateway.models.models import User,Event, Reservation, Base
+from backend.gateway.models.models import User, Event, Reservation, Base
 from backend.gateway.models.schemas import UserCreate, EventBase, EventResponse, ReservationBase, User, Reservation
-from sqlalchemy import create_engine 
+from sqlalchemy import create_engine
 import os
 import uvicorn
-from backend.gateway.routes import health, auth, events,reservations
+from backend.gateway.routes import health, auth, events, reservations
 
 #uvicorn backend.main:app --reload --port 9999 
 #post - cria novo ...
@@ -14,7 +14,7 @@ from backend.gateway.routes import health, auth, events,reservations
 
 #falta testar com a api, quando estuver conectado com o postgree
 
-SQLALMECHY_URL = "postgresql://username:password@localhost/dbname"
+SQLALMECHY_URL = "postgresql://postgres:123@172.18.153.122/postgres"
 
 engine = create_engine(SQLALMECHY_URL)
 session_local = sessionmaker(autocommit = False, autoflush=False, bind = engine)
@@ -27,8 +27,6 @@ app.include_router(health.router)
 app.include_router(auth.router, tags = ["Utilizadores"])
 app.include_router(events.router, tags = ["Eventos"])
 app.include_router(reservations.router, tags = ["Reservas"])
-
-
 
 
 @app.get("/")
