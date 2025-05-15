@@ -13,7 +13,7 @@ class User(Base):
     password = Column(String)
     
 class Event(Base):
-    __tablename__ = 'events'
+    __tablename__ = 'eventos'
     
     id = Column(Integer, primary_key=True, index = True)
     name = Column(String, index=True)
@@ -23,14 +23,14 @@ class Event(Base):
     """organizer_id = Column(Integer, ForeignKey("users.id"))"""
     
 class Reservation(Base):
-    __tablename__ = 'reservations'
+    __tablename__ = 'reservas'
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'))
-    event_id = Column(Integer, ForeignKey('event.id'))
+    event_id = Column(Integer, ForeignKey('eventos.id'))
     reservation_time = Column(DateTime)
     
-    user = relationship('User', back_populates='reservations')
-    event = relationship('Event', back_populates='reservations') 
+    user = relationship('User', back_populates='reservas')
+    event = relationship('Event', back_populates='reservas') 
     
     
     

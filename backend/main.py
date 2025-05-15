@@ -60,7 +60,7 @@ def get_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
 #Endpoints para Eventos
-@app.post("/events/", response_model=Event)
+@app.post("/events/", response_model=EventResponse)
 def create_event(event: EventBase, db: Session = Depends(get_db)):
     new_event = Event(**event.dict())
     db.add(new_event)
@@ -68,7 +68,7 @@ def create_event(event: EventBase, db: Session = Depends(get_db)):
     db.refresh(new_event)
     return new_event
 
-@app.get("/users/", response_model=List[Event]) 
+@app.get("/users/", response_model=List[EventResponse]) 
 def get_users(db: Session = Depends(get_db)):
     return db.query(Event).all()
 
