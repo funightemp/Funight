@@ -1,65 +1,58 @@
 from typing import List
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, sessionmaker
-from backend.gateway.models.models import User, Event, Reservation, Base
-from backend.gateway.models.schemas import UserCreate, EventBase, EventResponse, ReservationBase, User, Reservation
 from sqlalchemy import create_engine
 import os
 import uvicorn
+from backend.gateway.routes.eventbrite_services import router as eventbrite_router
+from backend.gateway.models.models import User as UserModel, Event, Reservation, Base
+from backend.gateway.models.schemas import UserCreate, EventBase, EventResponse, ReservationBase, User as UserSchema, Reservation as ReservationSchema
 from backend.gateway.routes import health, auth, events, reservations
 
-#uvicorn backend.main:app --reload --port 9999 
-#post - cria novo ...
-#get - lista tudo o que está na base de dados correspondente
-
-#falta testar com a api, quando estuver conectado com o postgree
-
+# Database connection
 SQLALMECHY_URL = "postgresql://postgres:123@172.18.153.122/postgres"
-
 engine = create_engine(SQLALMECHY_URL)
-session_local = sessionmaker(autocommit = False, autoflush=False, bind = engine)
-
-Base.metadata.create_all(bind = engine)
+session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="FastApi App")
 
+# Include routers
 app.include_router(health.router)
-app.include_router(auth.router, tags = ["Utilizadores"])
-app.include_router(events.router, tags = ["Eventos"])
-app.include_router(reservations.router, tags = ["Reservas"])
-
+app.include_router(auth.router, tags=["Utilizadores"])
+app.include_router(events.router, tags=["Eventos"])
+app.include_router(reservations.router, tags=["Reservas"])
+app.include_router(eventbrite_router)
 
 @app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
 
-
-#Obter acesso a base de dados
+# DB Dependency
 def get_db():
     db = session_local()
     try:
         yield db
     finally:
         db.close()
-        
-#Endpoints para utilizadores
 
-@app.post("/users/", response_model=User)
+# Users
+@app.post("/users/", response_model=UserSchema)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()    
+    db_user = db.query(UserModel).filter(UserModel.username == user.username).first()
     if db_user:
-        raise HTTPException(status_code=400, detail = "Username already registered")
-    new_user = User(username = user.username, password = user.password) #podemos adicionar hash da senha
+        raise HTTPException(status_code=400, detail="Username already registered")
+    new_user = UserModel(username=user.username, password=user.password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
 
-@app.get("/users/", response_model=List[User]) 
-def get_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+@app.get("/users/", response_model=List[UserSchema])
+def list_users(db: Session = Depends(get_db)):
+    return db.query(UserModel).all()
 
-#Endpoints para Eventos
+# Events
 @app.post("/events/", response_model=EventResponse)
 def create_event(event: EventBase, db: Session = Depends(get_db)):
     new_event = Event(**event.dict())
@@ -68,25 +61,24 @@ def create_event(event: EventBase, db: Session = Depends(get_db)):
     db.refresh(new_event)
     return new_event
 
-@app.get("/users/", response_model=List[EventResponse]) 
-def get_users(db: Session = Depends(get_db)):
+@app.get("/events/", response_model=List[EventResponse])
+def list_events(db: Session = Depends(get_db)):
     return db.query(Event).all()
 
-#Endpoints para Reservas
-
-@app.post("/reservations/", response_model=Reservation)
-def create_event(reservation: ReservationBase, db: Session = Depends(get_db)):
-    new_reservation = Event(**reservation.dict())
+# Reservations
+@app.post("/reservations/", response_model=ReservationSchema)
+def create_reservation(reservation: ReservationBase, db: Session = Depends(get_db)):
+    new_reservation = Reservation(**reservation.dict())
     db.add(new_reservation)
     db.commit()
     db.refresh(new_reservation)
     return new_reservation
 
-@app.get("/reservations/", response_model=List[Reservation]) 
-def get_users(db: Session = Depends(get_db)):
+@app.get("/reservations/", response_model=List[ReservationSchema])
+def list_reservations(db: Session = Depends(get_db)):
     return db.query(Reservation).all()
 
-
+# Run the app
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 9999))
-    uvicorn.run(app,"0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)
