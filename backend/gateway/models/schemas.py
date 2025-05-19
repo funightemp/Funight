@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
 
 class UserCreate(BaseModel):
     nome: str
@@ -12,3 +14,12 @@ class UserOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class EventCreate(BaseModel):
+    titulo: str
+    descricao: Optional[str]
+    data_inicio: datetime
+    data_fim: Optional[datetime]
+    url_imagem: Optional[str]
+    url_ingressos: Optional[str]
