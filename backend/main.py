@@ -1,14 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.connection import engine, Base, get_db
-from backend.gateway.models.schemas import UserCreate, UserOut
+from backend.gateway.models.schemas import UserCreate, UserOut, EventCreate
+from backend.gateway.models.models import Event
 from backend.gateway.models.crud import create_user, get_users
 from typing import List
 from crud import create_event
-from eventbrite import fetch_eventbrite_events
+from backend.gateway.models.eventbrite import fetch_eventbrite_events
 from typing import List
-from schemas import EventCreate
-from models import Event
 
 # Criação das tabelas
 Base.metadata.create_all(bind=engine)
