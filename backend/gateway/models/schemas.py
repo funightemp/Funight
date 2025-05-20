@@ -12,14 +12,24 @@ class UserOut(BaseModel):
     nome: str
     email: str
 
+
+class EventBase(BaseModel):
+    titulo: str
+    descricao: Optional[str] = None
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    url_imagem: Optional[str] = None
+    url_ingressos: Optional[str] = None
+    
     class Config:
         orm_mode = True
 
+class EventCreate(EventBase):
+    pass
 
-class EventCreate(BaseModel):
-    titulo: str
-    descricao: Optional[str]
-    data_inicio: datetime
-    data_fim: Optional[datetime]
-    url_imagem: Optional[str]
-    url_ingressos: Optional[str]
+class EventSchema(EventBase):
+    id: int
+    criado_em: datetime
+
+    class Config:
+        from_attributes = True

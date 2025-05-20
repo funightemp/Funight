@@ -1,12 +1,12 @@
 import requests
-from schemas import EventCreate
+from backend.gateway.models.schemas import UserCreate, UserOut, EventCreate
 from typing import List
 from datetime import datetime
 
 # Coloca aqui o teu token privado do Eventbrite
 EVENTBRITE_TOKEN = "3R6ETKFJBUG7Z5IDW6VI"
 
-def fetch_eventbrite_events(keyword: str = "music", location: str = "Lisbon") -> List[EventCreate]:
+def fetch_eventbrite_events(keyword: str = "music", location: str = "Porto") -> List[EventCreate]:
     headers = {
         "Authorization": f"Bearer {EVENTBRITE_TOKEN}"
     }
@@ -17,10 +17,11 @@ def fetch_eventbrite_events(keyword: str = "music", location: str = "Lisbon") ->
         "expand": "venue"
     }
 
-    response = requests.get("https://www.eventbriteapi.com/v3/events/search/", headers=headers, params=params)
-    
+    response = requests.get("https://www.eventbriteapi.com/v3", headers=headers, params=params)
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.text}")
     if response.status_code != 200:
-        raise Exception("Erro ao buscar eventos do Eventbrite")
+        raise Exception(f"Erro ao buscar eventos do Eventbrite: {response.status_code} - {response.text}")
 
     events_data = response.json().get("events", [])
     events = []
