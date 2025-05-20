@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
-import 'package:frontend/views/home/events_screen.dart';
+import 'package:frontend/views/events/events_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

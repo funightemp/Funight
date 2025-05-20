@@ -1,130 +1,136 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/event.dart';
+import 'package:frontend/services/ticket_service.dart';
+import 'package:frontend/views/events/events_detail.dart';
+import 'package:frontend/views/tickets/ticket_card.dart';
 
 class EventCard extends StatelessWidget {
-  // Defina um modelo de dados para os eventos
-  final String title;
-  final String? imageUrl; // Agora é opcional, pode ser nulo
-  final String date;
-  final String location;
-  final double? price; // Preço também pode ser nulo
-  final String? description; // Adicionei descrição
-  final VoidCallback? onBuyTicket; // Adiciona o callback para comprar bilhete
+  final Event event;
   final Color backgroundColor;
   final Color textColor;
   final Color primaryColor;
+  final bool showTicketOwned;
 
   const EventCard({
     super.key,
-    required this.title,
-    this.imageUrl,
-    required this.date,
-    required this.location,
-    this.price,
-    this.description,
-    this.onBuyTicket, // Inicializa o callback
+    required this.event,
     required this.backgroundColor,
     required this.textColor,
     required this.primaryColor,
+    required this.showTicketOwned,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      elevation: 3, // Adiciona uma sombra ao card
-      color: backgroundColor, // Usa a cor de fundo do card
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Arredonda os cantos
+      elevation: 3,
+      color: backgroundColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        // Permite que o card seja clicável
-        onTap: () {
-          // TODO: Implementar a navegação para a página de detalhes do evento
-          // Você pode usar Navigator.push para navegar para uma nova página
-          // que mostrará os detalhes completos do evento.
-          print('Card do evento "${title}" clicado!'); // Apenas para teste
-          _showEventDetails(context); // Chama a função para mostrar detalhes
-        },
+        onTap: () => _showEventDetails(context),
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Row(
             children: [
-              // Imagem do Evento (se disponível)
+              // Imagem do evento
               SizedBox(
                 width: 100,
                 height: 100,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: imageUrl != null && imageUrl!.isNotEmpty // Verifica se a URL não é nula nem vazia
+                  child: event.imageUrl.isNotEmpty
                       ? Image.network(
-                          imageUrl!,
+                          event.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            // Tratamento de erro: exibe um ícone se a imagem não carregar
-                            return const Center(
-                                child: Icon(Icons.error_outline,
-                                    color: Colors.grey));
-                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.error_outline, color: Colors.grey),
                         )
                       : const Image(
-                          //caso a imageUrl seja nula ou vazia
-                          image: AssetImage(
-                              'assets/event_placeholder.png'), // Use uma imagem local como placeholder
+                          image: AssetImage('assets/event_placeholder.png'),
                           fit: BoxFit.cover,
                         ),
                 ),
               ),
               const SizedBox(width: 10),
-              // Coluna com os detalhes do evento
+
+              // Informações do evento
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      event.title,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: textColor, // Usa a cor do texto
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Data: $date',
-                      style: TextStyle(fontSize: 14, color: textColor), // Usa a cor do texto
+                      'Data: ${event.date}',
+                      style: TextStyle(fontSize: 14, color: textColor),
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Local: $location',
-                      style: TextStyle(fontSize: 14, color: textColor), // Usa a cor do texto
-                      overflow: TextOverflow.ellipsis, // Adiciona esta linha
+                      'Local: ${event.location}',
+                      style: TextStyle(fontSize: 14, color: textColor),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 5),
-                    if (price != null) // Verifica se o preço não é nulo
-                      Text(
-                        'Preço: ${price.toString()} €', // Formata o preço com 2 casas decimais
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.green),
-                      )
-                    else
-                      const Text(
-                        'Grátis',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.green),
+                    Text(
+                      showTicketOwned
+                          ? 'Bilhete já comprado'
+                          : (event.price != null
+                              ? 'Preço: ${event.price!.toStringAsFixed(2)} €'
+                              : 'Grátis'),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: showTicketOwned ? Colors.orange : Colors.green,
                       ),
+                    ),
                   ],
                 ),
               ),
-              // Botão de Comprar Bilhete (se o callback onBuyTicket for fornecido)
-              if (onBuyTicket != null)
+
+              // Botão de compra de bilhete
+              if (!showTicketOwned)
                 Padding(
-                  padding: const EdgeInsets.only(left: 10), // Adiciona padding ao botão
+                  padding: const EdgeInsets.only(left: 10),
                   child: ElevatedButton(
-                    onPressed: onBuyTicket,
+                    onPressed: () async {
+                      final ticketId = generateTicketId();
+                      final qrCodeData = 'ticket:$ticketId:user:${event.userId}'; // opcional
+
+                      await saveTicketToFirestore(
+                        ticketId: ticketId,
+                        qrCodeData: qrCodeData,
+                        eventId: event.eventId,
+                        eventTitle: event.title,
+                        eventDate: event.date,
+                        eventLocation: event.location,
+                      );
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TicketDetailsScreen(
+                            title: event.title,
+                            eventDate: event.date,
+                            eventLocation: event.location,
+                            ticketNumber: ticketId,
+                            qrCodeData: qrCodeData,
+                            backgroundColor: backgroundColor,
+                            textColor: textColor,
+                            primaryColor: primaryColor,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor, // Usa a cor primária
+                      backgroundColor: primaryColor,
                       foregroundColor: textColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -140,18 +146,20 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  // Função para mostrar os detalhes do evento em uma nova página
   void _showEventDetails(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EventDetailsScreen( // Usa a nova tela
-          title: title,
-          imageUrl: imageUrl,
-          date: date,
-          location: location,
-          price: price,
-          description: description,
+        builder: (context) => EventDetailsScreen(
+          eventId: event.eventId,
+          title: event.title,
+          imageUrl: event.imageUrl,
+          date: event.date,
+          location: event.location,
+          price: event.price,
+          description: event.description,
+          latitude: event.latitude,
+          longitude: event.longitude,
           backgroundColor: backgroundColor,
           textColor: textColor,
           primaryColor: primaryColor,
@@ -160,133 +168,3 @@ class EventCard extends StatelessWidget {
     );
   }
 }
-
-// Nova classe para a tela de detalhes do evento
-class EventDetailsScreen extends StatelessWidget {
-  final String title;
-  final String? imageUrl;
-  final String date;
-  final String location;
-  final double? price;
-  final String? description; // Adiciona a descrição
-  final Color backgroundColor;
-  final Color textColor;
-  final Color primaryColor;
-
-  const EventDetailsScreen({
-    super.key,
-    required this.title,
-    this.imageUrl,
-    required this.date,
-    required this.location,
-    this.price,
-    this.description, // Inclui no construtor
-    required this.backgroundColor,
-    required this.textColor,
-    required this.primaryColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: Text(title, style: TextStyle(color: textColor)), // Usa a cor do texto
-        backgroundColor: backgroundColor,
-        iconTheme: IconThemeData(color: textColor),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          // Permite scroll se o conteúdo for muito longo
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Imagem do Evento
-              SizedBox(
-                width: double.infinity,
-                height: 200,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: imageUrl != null && imageUrl!.isNotEmpty
-                      ? Image.network(
-                          imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Center(
-                                child: Icon(Icons.error_outline,
-                                    color: Colors.grey));
-                          },
-                        )
-                      : const Image(
-                          image: AssetImage('assets/event_placeholder.png'),
-                          fit: BoxFit.cover,
-                        ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Título do Evento
-              Text(
-                title,
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: textColor), // Usa a cor do texto
-              ),
-              const SizedBox(height: 10),
-              // Data e Local
-              Row(
-                children: [
-                  Icon(Icons.calendar_today, color: textColor), // Usa a cor do texto
-                  const SizedBox(width: 5),
-                  Text(
-                    'Data: $date',
-                    style: TextStyle(fontSize: 16, color: textColor), // Usa a cor do texto
-                  ),
-                  const SizedBox(width: 20),
-                  Icon(Icons.location_on, color: textColor), // Usa a cor do texto
-                  const SizedBox(width: 5),
-                  Expanded( // Envolve o Text em um Expanded
-                    child: Text(
-                      'Local: $location',
-                      style: TextStyle(fontSize: 16, color: textColor), // Usa a cor do texto
-                      overflow: TextOverflow.ellipsis, // Adiciona esta linha
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // Preço
-              if (price != null)
-                Text(
-                  'Preço: ${price.toString()} €',
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.green),
-                )
-              else
-                const Text(
-                  'Grátis',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.green),
-                ),
-              const SizedBox(height: 20),
-              // Descrição
-              Text(
-                description ??
-                    'Nenhuma descrição disponível.', // Usa a descrição, ou uma mensagem padrão se for nula
-                style: TextStyle(fontSize: 16, color: textColor), // Usa a cor do texto
-                textAlign: TextAlign.justify, //justifica o texto
-              ),
-              // Adicione mais detalhes conforme necessário (ex: mapa, organizador, etc.)
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-

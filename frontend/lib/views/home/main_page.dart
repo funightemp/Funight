@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/views/home/events_screen.dart';
+import 'package:frontend/views/events/events_screen.dart';
 import 'package:frontend/views/tickets/tickets_screen.dart';
-import 'package:frontend/views/social/social_screen.dart'; // Importa a tela social
-import 'package:frontend/views/profile/profile_screen.dart'; // Importa a tela de perfil
-import 'package:frontend/views/home/settings_screen.dart'; // Importa a tela de configurações
+import 'package:frontend/views/social/social_screen.dart';
+import 'package:frontend/views/profile/profile_screen.dart';
+import 'package:frontend/views/home/settings_screen.dart';
 
 class MainPage extends StatefulWidget {
+  const MainPage({super.key});
+
   @override
-  _MainPageState createState() => _MainPageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
-  final Color _backgroundColor = const Color(0xFF121212); // Cor de fundo
+  final Color _backgroundColor = const Color(0xFF121212);
 
-  // Lista de Widgets para cada seção
-  static List<Widget> _widgetOptions = <Widget>[
+  static final List<Widget> _widgetOptions = <Widget>[
     EventsScreen(),
     TicketScreen(),
-    SocialScreen(), // Tela Social
-    ProfileScreen(), // Tela de Perfil
-    SettingsScreen(), // Tela de Configurações
+    SocialScreen(),
+    ProfileScreen(),
+    SettingsScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -32,38 +33,51 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor, // Aplica a cor de fundo ao Scaffold
-      body: _widgetOptions.elementAt(_selectedIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on),
-            label: 'Eventos',
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        // Evita que conteúdo fique debaixo da barra de status / notch
+        top: true,
+        bottom: false,
+        child: _widgetOptions.elementAt(_selectedIndex),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: _backgroundColor,
+          border: const Border(
+            top: BorderSide(color: Colors.grey, width: 0.2),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.description),
-            label: 'Bilhetes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Social',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Definições',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF9747FF), // Cor primária para seleção
-        unselectedItemColor: Colors.grey, // Cor para itens não selecionados
-        onTap: _onItemTapped,
-        backgroundColor: _backgroundColor, // Aplica a cor de fundo à BottomNavigationBar
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: _backgroundColor,
+          selectedItemColor: const Color(0xFF9747FF),
+          unselectedItemColor: Colors.grey,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.location_on),
+              label: 'Eventos',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.description),
+              label: 'Bilhetes',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people),
+              label: 'Social',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Perfil',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Definições',
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-

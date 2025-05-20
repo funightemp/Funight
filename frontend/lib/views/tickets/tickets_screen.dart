@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/views/tickets/ticket_card.dart'; // Importe o TicketCard
 
@@ -18,60 +20,65 @@ class _TicketScreenState extends State<TicketScreen>
   final Color _textColor = Colors.white;
   final Color _accentColor = const Color(0xFF03DAC6); // Cor de destaque
 
-  // Lista de tickets de exemplo (substitua com seus dados reais)
-  final List<Map<String, dynamic>> _ticketsFuturos = [
-    {
-      'id': '1',
-      'title': 'Concerto de Rock Futuro',
-      'date': '2024-08-15',
-      'location': 'Estádio da Luz',
-      'ticketNumber': '12345',
-      'qrCodeData': 'https://example.com/ticket/12345', // Adicione dados do QR Code
-    },
-    {
-      'id': '2',
-      'title': 'Peça de Teatro Futura',
-      'date': '2024-09-20',
-      'location': 'Teatro Nacional',
-      'ticketNumber': '67890',
-      'qrCodeData': 'https://example.com/ticket/67890',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _ticketsPassados = [
-    {
-      'id': '3',
-      'title': 'Concerto de Rock Passado',
-      'date': '2024-07-10',
-      'location': 'Coliseu',
-      'ticketNumber': '24680',
-      'qrCodeData': 'https://example.com/ticket/24680',
-    },
-    {
-      'id': '4',
-      'title': 'Exposição de Arte Passada',
-      'date': '2024-06-01',
-      'location': 'Museu Nacional',
-      'ticketNumber': '13579',
-      'qrCodeData': 'https://example.com/ticket/13579',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _ticketsDecorrer = [
-    {
-      'id': '5',
-      'title': 'Festival de Verão',
-      'date': '2024-07-28', // Data de hoje
-      'location': 'Parque da Cidade',
-      'ticketNumber': '98765',
-      'qrCodeData': 'https://example.com/ticket/98765',
-    },
-  ];
+  List<Map<String, dynamic>> _ticketsFuturos = [];
+  List<Map<String, dynamic>> _ticketsPassados = [];
+  List<Map<String, dynamic>> _ticketsDecorrer = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchUserTickets(); // chama a função aqui
+  }
+
+  Future<void> _fetchUserTickets() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('tickets')
+        .where('userId', isEqualTo: user.uid)
+        .get();
+
+    final List<Map<String, dynamic>> futuros = [];
+    final List<Map<String, dynamic>> passados = [];
+    final List<Map<String, dynamic>> aDecorrer = [];
+
+    final now = DateTime.now();
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final dateStr = data['eventDate'] ?? '';
+      final eventDate = DateTime.tryParse(dateStr);
+
+      if (eventDate == null) continue;
+
+      final ticket = {
+        'id': doc.id,
+        'title': data['eventTitle'],
+        'date': dateStr,
+        'location': data['eventLocation'],
+        'ticketNumber': data['ticketId'],
+        'qrCodeData': data['qrCodeData'],
+      };
+
+      if (eventDate.isAfter(now)) {
+        futuros.add(ticket);
+      } else if (eventDate.year == now.year &&
+          eventDate.month == now.month &&
+          eventDate.day == now.day) {
+        aDecorrer.add(ticket);
+      } else {
+        passados.add(ticket);
+      }
+    }
+
+    // Agora sim, podes chamar setState com as listas mutáveis
+    setState(() {
+      _ticketsFuturos = futuros;
+      _ticketsDecorrer = aDecorrer;
+      _ticketsPassados = passados;
+    });
   }
 
   @override
@@ -84,16 +91,17 @@ class _TicketScreenState extends State<TicketScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TicketDetailsScreen(
-          title: ticket['title'],
-          eventDate: ticket['date'],
-          eventLocation: ticket['location'],
-          ticketNumber: ticket['ticketNumber'],
-          qrCodeData: ticket['qrCodeData'],
-          backgroundColor: _backgroundColor,
-          textColor: _textColor,
-          primaryColor: _primaryColor,
-        ),
+        builder:
+            (context) => TicketDetailsScreen(
+              title: ticket['title'],
+              eventDate: ticket['date'],
+              eventLocation: ticket['location'],
+              ticketNumber: ticket['ticketNumber'],
+              qrCodeData: ticket['qrCodeData'],
+              backgroundColor: _backgroundColor,
+              textColor: _textColor,
+              primaryColor: _primaryColor,
+            ),
       ),
     );
   }
@@ -145,13 +153,18 @@ class _TicketScreenState extends State<TicketScreen>
       itemCount: tickets.length,
       itemBuilder: (context, index) {
         final ticket = tickets[index];
-        return GestureDetector( // Envolva o TicketCard com um GestureDetector
+        return GestureDetector(
+          // Envolva o TicketCard com um GestureDetector
           onTap: () {
-            _showTicketDetails(context, ticket); // Navega para a tela de detalhes
+            _showTicketDetails(
+              context,
+              ticket,
+            ); // Navega para a tela de detalhes
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: TicketCard( // Use o TicketCard
+            child: TicketCard(
+              // Use o TicketCard
               title: ticket['title'],
               eventDate: ticket['date'],
               eventLocation: ticket['location'],
@@ -167,4 +180,3 @@ class _TicketScreenState extends State<TicketScreen>
     );
   }
 }
-
