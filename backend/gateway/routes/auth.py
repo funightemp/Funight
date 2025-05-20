@@ -8,7 +8,7 @@ from ..models.models import User
 from database import connection
 from ..models.schemas import UserCreate, UserBase
 from passlib.context import CryptContext
-from main import get_db
+from backend.dependencies import get_db
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ ACESS_TOKEN_EXPIRE_MINUTES = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
 #OAuth2 para a autenticação
-oauth2_scheme = OAuth2AuthorizationCodeBearer(tokenUrl="login")
+oauth2_scheme = OAuth2AuthorizationCodeBearer(authorizationUrl="/authorize", tokenUrl="login")
 
 
 #Função que queria o hash para a senha

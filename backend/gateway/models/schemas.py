@@ -1,44 +1,35 @@
-from pydantic import BaseModel 
+from pydantic import BaseModel
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
-#Esquemas de Valiadação
+class UserCreate(BaseModel):
+    nome: str
+    email: str
+    senha_hash: str
 
-class UserBase(BaseModel):
-    id : int
-    username : str
-    
-class UserCreate(UserBase):
-    password : str
-    
-class User(UserBase):
+class UserOut(BaseModel):
     id: int
-    
-    class Config:
-        orm_mode = True
-        
+    nome: str
+    email: str
+
+
 class EventBase(BaseModel):
-    id : int
-    descrition : Optional[str]
-    date : str
-
-class EventResponse(EventBase):
-    id : int
-    organize_id : int
+    titulo: str
+    descricao: Optional[str] = None
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    url_imagem: Optional[str] = None
+    url_ingressos: Optional[str] = None
     
-    class Config:
-        from_atributtes = True
-    
-        
-class ReservationBase(BaseModel):
-    user_id : int
-    event_id : int
-    reservation_time : datetime
-    
-class Reservation(ReservationBase):
-    id: int
-    user_id : int
     class Config:
         orm_mode = True
-    
-    
+
+class EventCreate(EventBase):
+    pass
+
+class EventSchema(EventBase):
+    id: int
+    criado_em: datetime
+
+    class Config:
+        from_attributes = True

@@ -1,38 +1,23 @@
-from sqlalchemy import Column, Integer, DateTime, String, Text, ForeignKey, Numeric, Enum, TIMESTAMP, func
-from sqlalchemy.orm import relationship
-from database.connection import base
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from sqlalchemy import Column, Integer, String, DateTime, Text, func
+from database.connection import Base
 
 class User(Base):
-    __tablename__ = 'users'
-    
-    id = Column(Integer,primary_key=True, index = True )
-    username = Column(String, unique=True, index=True)
-    password = Column(String)
-    
-class Event(Base):
-    __tablename__ = 'events'
-    
-    id = Column(Integer, primary_key=True, index = True)
-    name = Column(String, index=True)
-    description = Column(String)
-    start_time = Column(DateTime)
-    end_time = Column(DateTime)
-    """organizer_id = Column(Integer, ForeignKey("users.id"))"""
-    
-class Reservation(Base):
-    __tablename__ = 'reservations'
+    __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
-    event_id = Column(Integer, ForeignKey('event.id'))
-    reservation_time = Column(DateTime)
-    
-    user = relationship('User', back_populates='reservations')
-    event = relationship('Event', back_populates='reservations') 
-    
-    
-    
+    nome = Column(String(100), nullable=False)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+    senha_hash = Column(String(255), nullable=False)
+    criado_em = Column(DateTime, default=func.now())
 
+class Event(Base):
+    __tablename__ = "eventos"
 
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    titulo = Column(String(150), nullable=False)
+    descricao = Column(Text)
+    data_inicio = Column(DateTime)
+    data_fim = Column(DateTime)
+    url_imagem = Column(Text)
+    url_ingressos = Column(Text)
+    criado_em = Column(DateTime, default=func.now())

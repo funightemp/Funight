@@ -17,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final bool _obscurePassword = true;
   bool _isLoading = false;
 
   void _signInWithEmailAndPassword() async {
@@ -168,13 +168,13 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
-        child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text(text),
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF9747FF),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
+        child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text(text),
       ),
     );
   }

@@ -98,13 +98,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
-        child: Text(text),
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF9747FF),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
+        child: Text(text),
       ),
     );
   }
