@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/views/events/events_screen.dart';
+import 'package:frontend/views/home/events_screen.dart';
 import 'package:frontend/views/tickets/tickets_screen.dart';
 import 'package:frontend/views/social/social_screen.dart';
 import 'package:frontend/views/profile/profile_screen.dart';

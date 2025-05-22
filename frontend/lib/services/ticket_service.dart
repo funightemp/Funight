@@ -20,24 +20,25 @@ Future<void> saveTicketToFirestore({
   final user = FirebaseAuth.instance.currentUser;
 
   if (user == null) {
-    throw Exception("Utilizador não autenticado");
+    throw Exception("Utilizador não autenticado.");
   }
 
-  final ticketRef = FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('tickets')
-      .doc(ticketId);
-
-  await ticketRef.set({
+  final ticketData = {
     'ticketId': ticketId,
+    'qrCodeData': qrCodeData,
     'eventId': eventId,
     'eventTitle': eventTitle,
     'eventDate': eventDate,
     'eventLocation': eventLocation,
-    'qrCodeData': qrCodeData,
     'createdAt': FieldValue.serverTimestamp(),
-  });
+  };
+
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('tickets')
+      .doc(ticketId)
+      .set(ticketData);
 }
 
 Future<void> comprarBilhete({

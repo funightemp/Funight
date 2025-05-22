@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart'; // Importe o pacote para gerar QR Codes
 
 class TicketCard extends StatelessWidget {
@@ -45,18 +46,27 @@ class TicketCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Data: $eventDate',
-              style: TextStyle(fontSize: 14, color: textColor), // Usa a cor do texto
+              'Data: ${formatDate(eventDate)}',
+              style: TextStyle(
+                fontSize: 14,
+                color: textColor,
+              ), // Usa a cor do texto
             ),
             const SizedBox(height: 8),
             Text(
               'Local: $eventLocation',
-              style: TextStyle(fontSize: 14, color: textColor), // Usa a cor do texto
+              style: TextStyle(
+                fontSize: 14,
+                color: textColor,
+              ), // Usa a cor do texto
             ),
             const SizedBox(height: 8),
             Text(
               'Bilhete Nº: $ticketNumber',
-              style: TextStyle(fontSize: 16, color: textColor), // Usa a cor do texto
+              style: TextStyle(
+                fontSize: 16,
+                color: textColor,
+              ), // Usa a cor do texto
             ),
             const SizedBox(height: 16),
             // Exibe o QR Code se os dados estiverem disponíveis
@@ -66,18 +76,33 @@ class TicketCard extends StatelessWidget {
                   data: qrCodeData!, // Usa os dados do QR Code
                   version: QrVersions.auto,
                   size: 150,
-                  foregroundColor: textColor, // Usa a cor do texto para o QR Code
+                  foregroundColor:
+                      textColor, // Usa a cor do texto para o QR Code
                   backgroundColor: backgroundColor,
                   errorCorrectionLevel: QrErrorCorrectLevel.L,
                 ),
               )
             else
-              const Center(child: Text('QR Code não disponível', style: TextStyle(color: Colors.grey))), // Mensagem caso não haja QR Code
+              const Center(
+                child: Text(
+                  'QR Code não disponível',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ), // Mensagem caso não haja QR Code
           ],
         ),
       ),
     );
   }
+
+  String formatDate(String isoDate) {
+  try {
+    final dateTime = DateTime.parse(isoDate);
+    return DateFormat('dd-MM-yyyy').format(dateTime);
+  } catch (e) {
+    return isoDate;
+  }
+}
 }
 
 // Novo componente para a tela de detalhes do Ticket
@@ -128,7 +153,7 @@ class TicketDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Data do Evento: $eventDate',
+                'Data do Evento: ${formatDate(eventDate)}',
                 style: TextStyle(fontSize: 18, color: textColor),
               ),
               const SizedBox(height: 10),
@@ -154,11 +179,25 @@ class TicketDetailsScreen extends StatelessWidget {
                   ),
                 )
               else
-                const Center(child: Text('QR Code não disponível', style: TextStyle(color: Colors.grey))),
+                const Center(
+                  child: Text(
+                    'QR Code não disponível',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String formatDate(String isoDate) {
+    try {
+      final dateTime = DateTime.parse(isoDate);
+      return DateFormat('dd-MM-yyyy').format(dateTime);
+    } catch (_) {
+      return isoDate;
+    }
   }
 }

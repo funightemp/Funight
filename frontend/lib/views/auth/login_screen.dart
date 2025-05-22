@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:frontend/views/home/main_page.dart';
+import 'package:frontend/views/home/main_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
-import 'package:frontend/views/events/events_screen.dart';
+import 'package:frontend/views/home/events_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Navigator.pushReplacement(
     context,
-    MaterialPageRoute(builder: (context) => const EventsScreen()),
+    MaterialPageRoute(builder: (context) => const MainPage()),
   );
 } on FirebaseAuthException catch (e) {
   print('❌ Erro no login: ${e.message}');
@@ -112,12 +114,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () => Navigator.push(
                     context, MaterialPageRoute(builder: (context) => RegisterScreen())),
-                  child: const Text('Don´t have an account? Create one now!', style: TextStyle(color: Colors.white)),
+                  child: const Text('Não tem conta? Cria uma agora!', style: TextStyle(color: Colors.white)),
                 ),
                 TextButton(
                   onPressed: () => Navigator.push(
                     context, MaterialPageRoute(builder: (context) => ForgotPasswordScreen())),
-                  child: const Text('Forgot Your Password', style: TextStyle(color: Colors.white)),
+                  child: const Text('Esqueceu-se da password?', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),

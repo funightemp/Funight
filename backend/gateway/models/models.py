@@ -1,15 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, func
 from database.connection import Base
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(100), nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=False)
-    senha_hash = Column(String(255), nullable=False)
-    criado_em = Column(DateTime, default=func.now())
-
 class Event(Base):
     __tablename__ = "eventos"
 
@@ -18,6 +9,9 @@ class Event(Base):
     descricao = Column(Text)
     data_inicio = Column(DateTime)
     data_fim = Column(DateTime)
+    localizacao = Column(String(255))
+    latitude = Column(String(100))
+    longitude = Column(String(100))
     url_imagem = Column(Text)
-    url_ingressos = Column(Text)
+    preco = Column(String(50))
     criado_em = Column(DateTime, default=func.now())

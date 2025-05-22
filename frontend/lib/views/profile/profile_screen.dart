@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/views/events/event_card.dart';
+import 'package:frontend/views/profile/profile_edit_screen.dart'; // importa o ConfirmedEventCard
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -8,171 +14,225 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Controladores
-  final TextEditingController firstNameController = TextEditingController(text: "Dylan");
-  final TextEditingController lastNameController = TextEditingController(text: "Thomas");
-  final TextEditingController emailController = TextEditingController(text: "dylanthomas@server.com");
-  final TextEditingController phoneController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Cores do tema
-  final Color _backgroundColor = const Color(0xFF121212);
-  final Color _textColor = Colors.white;
-  final Color _primaryColor = const Color(0xFFBB86FC);
+  String? name;
+  String? surname;
+  String? bio;
+  String? photoBase64;
+
+  List<Map<String, dynamic>> _confirmedEvents = [];
+  bool isLoading = true;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _backgroundColor,
-      appBar: AppBar(
-        title: const Text("Perfil", style: TextStyle(color: Colors.white)),
-        backgroundColor: _backgroundColor,
-        iconTheme: IconThemeData(color: _textColor),
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: _primaryColor,
-                    child: Text(
-                      "DT",
-                      style: TextStyle(
-                        color: _textColor,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: _backgroundColor,
-                      child: Icon(Icons.camera_alt, size: 18, color: _primaryColor),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
-            _buildSectionTitle("Informações Pessoais"),
-            _buildTextField("Primeiro Nome", firstNameController),
-            _buildTextField("Último Nome", lastNameController),
-            _buildTextField("E-mail", emailController),
-
-            const SizedBox(height: 20),
-            _buildSectionTitle("Contacto"),
-            Text(
-              "Número de Telemóvel",
-              style: TextStyle(color: _textColor, fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: _primaryColor),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset("assets/flag.png", width: 24),
-                      const SizedBox(width: 5),
-                      Text("+351", style: TextStyle(color: _textColor)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: phoneController,
-                    style: TextStyle(color: _textColor),
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: "Digite o número",
-                      hintStyle: const TextStyle(color: Colors.white38),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: _primaryColor),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: _primaryColor),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                print("Nome: ${firstNameController.text} ${lastNameController.text}");
-                print("Email: ${emailController.text}");
-                print("Telefone: ${phoneController.text}");
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
-                foregroundColor: _textColor,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text("Atualizar Dados", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _fetchConfirmedEvents();
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: _primaryColor,
-        ),
-      ),
-    );
+  Future<void> _loadUserData() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final doc = await _firestore.collection('users').doc(user.uid).get();
+
+    if (doc.exists) {
+      final data = doc.data()!;
+      setState(() {
+        name = data['name'] ?? '';
+        surname = data['surname'] ?? '';
+        bio = data['bio'] ?? '';
+        photoBase64 = data['photoBase64'];
+      });
+    }
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(color: _textColor, fontSize: 14)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: controller,
-            style: TextStyle(color: _textColor),
-            decoration: InputDecoration(
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: _primaryColor),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: _primaryColor),
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+  Future<void> _fetchConfirmedEvents() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('tickets')
+        .get();
+
+    final now = DateTime.now();
+
+    final events = snapshot.docs
+        .map((doc) => doc.data())
+        .where((ticket) {
+          final dateStr = ticket['eventDate'];
+          final eventDate = DateTime.tryParse(dateStr ?? '');
+          return eventDate != null && eventDate.isAfter(now);
+        })
+        .toList();
+
+    setState(() {
+      _confirmedEvents = events;
+      isLoading = false;
+    });
+  }
+
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Terminar sessão"),
+        content: const Text("Tens a certeza que queres terminar sessão?"),
+        actions: [
+          TextButton(
+            child: const Text("Cancelar"),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          TextButton(
+            child: const Text("Sair"),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await FirebaseAuth.instance.signOut();
+              Navigator.of(context).pushReplacementNamed('/login');
+            },
           ),
         ],
       ),
+    );
+  }
+
+  Uint8List? _safeDecodeBase64(String? base64String) {
+    try {
+      if (base64String != null && base64String.contains(',')) {
+        final data = base64String.split(',').last;
+        if (data.length % 4 == 0) {
+          return base64Decode(data);
+        }
+      }
+    } catch (e) {
+      debugPrint('Erro ao decodificar imagem: $e');
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const backgroundColor = Color(0xFF121212);
+    const textColor = Colors.white;
+    const primaryColor = Color(0xFFBB86FC);
+
+    final decodedImage = _safeDecodeBase64(photoBase64);
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: const Text("Perfil", style: TextStyle(color: textColor)),
+        backgroundColor: backgroundColor,
+        iconTheme: const IconThemeData(color: textColor),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'Editar Perfil',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Terminar Sessão',
+            onPressed: () => _confirmLogout(context),
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: primaryColor,
+                          backgroundImage: decodedImage != null ? MemoryImage(decodedImage) : null,
+                          child: decodedImage == null
+                              ? Text(
+                                  (name != null && surname != null)
+                                      ? "${name![0]}${surname![0]}"
+                                      : '',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    color: textColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$name $surname',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                bio ?? '',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                    const Divider(color: Colors.grey),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Próximos Eventos Confirmados:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    /// Lista de eventos confirmados
+                    if (_confirmedEvents.isNotEmpty)
+                      Column(
+                        children: _confirmedEvents.map((event) {
+                          return ConfirmedEventCard(
+                            title: event['eventTitle'] ?? '',
+                            date: event['eventDate'] ?? '',
+                            location: event['eventLocation'] ?? '',
+                            backgroundColor: const Color(0xFF1E1E1E),
+                            textColor: textColor,
+                          );
+                        }).toList(),
+                      )
+                    else
+                      const Text(
+                        'Nenhum evento confirmado.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

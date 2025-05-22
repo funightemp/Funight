@@ -1,11 +1,17 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:frontend/views/tickets/ticket_qr_code_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:frontend/views/tickets/ticket_card.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 import 'package:frontend/services/ticket_service.dart';
 
-class EventDetailsScreen extends StatelessWidget {
+class EventDetailsScreen extends StatefulWidget {
   final String title;
   final String eventId;
   final String? imageUrl;
@@ -13,8 +19,8 @@ class EventDetailsScreen extends StatelessWidget {
   final String location;
   final double? price;
   final String? description;
-  final double? latitude;      
-  final double? longitude;    
+  final double? latitude;
+  final double? longitude;
   final Color backgroundColor;
   final Color textColor;
   final Color primaryColor;
@@ -28,21 +34,57 @@ class EventDetailsScreen extends StatelessWidget {
     required this.location,
     this.price,
     this.description,
-    required this.latitude,     
-    required this.longitude,   
+    required this.latitude,
+    required this.longitude,
     required this.backgroundColor,
     required this.textColor,
     required this.primaryColor,
   });
 
   @override
+  State<EventDetailsScreen> createState() => _EventDetailsScreenState();
+}
+
+class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  bool _hasTicket = false;
+  Map<String, dynamic>? _ticketData;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfUserHasTicket();
+  }
+
+  Future<void> _checkIfUserHasTicket() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final ticketsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('tickets');
+
+    final query = await ticketsRef
+        .where('eventId', isEqualTo: widget.eventId)
+        .limit(1)
+        .get();
+
+    if (query.docs.isNotEmpty) {
+      setState(() {
+        _hasTicket = true;
+        _ticketData = query.docs.first.data();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: widget.backgroundColor,
       appBar: AppBar(
-        title: Text(title, style: TextStyle(color: textColor)),
-        backgroundColor: backgroundColor,
-        iconTheme: IconThemeData(color: textColor),
+        title: Text(widget.title, style: TextStyle(color: widget.textColor)),
+        backgroundColor: widget.backgroundColor,
+        iconTheme: IconThemeData(color: widget.textColor),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -50,130 +92,140 @@ class EventDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Imagem do evento
-              SizedBox(
-                width: double.infinity,
-                height: 200,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child:
-                      imageUrl != null && imageUrl!.isNotEmpty
-                          ? Image.network(
-                            imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.grey,
-                                ),
-                              );
-                            },
-                          )
-                          : const Image(
-                            image: AssetImage('assets/event_placeholder.png'),
-                            fit: BoxFit.cover,
-                          ),
-                ),
-              ),
+              /// Imagem do evento
+              _buildImage(),
+
               const SizedBox(height: 20),
-              // Título
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
+
+              /// Título
+              Text(widget.title,
+                  style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: widget.textColor)),
+
               const SizedBox(height: 10),
-              // Data e Localização
+
+              /// Data e Local
               Row(
                 children: [
-                  Icon(Icons.calendar_today, color: textColor, size: 20),
+                  Icon(Icons.calendar_today, color: widget.textColor, size: 20),
                   const SizedBox(width: 6),
-                  Text('Data: $date', style: TextStyle(color: textColor)),
+                  Text('Data: ${formatDate(widget.date)}',
+                      style: TextStyle(color: widget.textColor)),
                   const SizedBox(width: 20),
-                  Icon(Icons.location_on, color: textColor, size: 20),
+                  Icon(Icons.location_on, color: widget.textColor, size: 20),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Local: $location',
-                      style: TextStyle(color: textColor),
+                      'Local: ${widget.location}',
+                      style: TextStyle(color: widget.textColor),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
+
               const SizedBox(height: 10),
-              // Preço
+
+              /// Preço
               Text(
-                price != null
-                    ? 'Preço: ${price!.toStringAsFixed(2)} €'
+                widget.price != null
+                    ? 'Preço: ${widget.price!.toStringAsFixed(2)} €'
                     : 'Grátis',
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.green,
-                ),
+                    fontSize: 18, fontWeight: FontWeight.w500, color: Colors.green),
               ),
+
               const SizedBox(height: 20),
-              // Descrição
+
+              /// Descrição
               Text(
-                description ?? 'Nenhuma descrição disponível.',
-                style: TextStyle(fontSize: 16, color: textColor),
+                widget.description ?? 'Nenhuma descrição disponível.',
+                style: TextStyle(fontSize: 16, color: widget.textColor),
                 textAlign: TextAlign.justify,
               ),
+
               const SizedBox(height: 30),
-              // Botão de Compra
+
+              /// Botão principal
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final ticketId = generateTicketId();
+                    if (_hasTicket && _ticketData != null) {
+                      // Abrir bilhete existente
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TicketDetailsScreen(
+                            title: widget.title,
+                            eventDate: widget.date,
+                            eventLocation: widget.location,
+                            ticketNumber: _ticketData!['ticketId'],
+                            qrCodeData: _ticketData!['qrCodeData'],
+                            backgroundColor: widget.backgroundColor,
+                            textColor: widget.textColor,
+                            primaryColor: widget.primaryColor,
+                          ),
+                        ),
+                      );
+                    } else {
+                      // Criar novo bilhete
+                      final ticketId = generateTicketId();
 
-                    await saveTicketToFirestore(
-                      ticketId: ticketId,
-                      qrCodeData: ticketId,
-                      eventId: eventId,
-                      eventTitle: title,
-                      eventDate: date,
-                      eventLocation: location,
-                    );
+                      await saveTicketToFirestore(
+                        ticketId: ticketId,
+                        qrCodeData: ticketId,
+                        eventId: widget.eventId,
+                        eventTitle: widget.title,
+                        eventDate: widget.date,
+                        eventLocation: widget.location,
+                      );
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TicketQRCodeScreen(ticketId: ticketId),
-                      ),
-                    );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TicketDetailsScreen(
+                            title: widget.title,
+                            eventDate: widget.date,
+                            eventLocation: widget.location,
+                            ticketNumber: ticketId,
+                            qrCodeData: ticketId,
+                            backgroundColor: widget.backgroundColor,
+                            textColor: widget.textColor,
+                            primaryColor: widget.primaryColor,
+                          ),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: textColor,
+                    backgroundColor: widget.primaryColor,
+                    foregroundColor: widget.textColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text('Comprar Bilhete'),
+                  child: Text(_hasTicket ? 'Ver Bilhete' : 'Comprar Bilhete'),
                 ),
               ),
+
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.directions),
-                  label: const Text("Obter Direções"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: textColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+
+              /// Botão direções
+              ElevatedButton.icon(
+                icon: const Icon(Icons.directions),
+                label: const Text("Obter Direções"),
+                onPressed: () => _openMaps(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.primaryColor,
+                  foregroundColor: widget.textColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  onPressed: () => _openMaps(context),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
               ),
             ],
@@ -183,13 +235,57 @@ class EventDetailsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildImage() {
+    if (widget.imageUrl == null || widget.imageUrl!.isEmpty) {
+      return const Image(
+        image: AssetImage('assets/event_placeholder.png'),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: 200,
+      );
+    }
+
+    return FutureBuilder<Uint8List?>(
+      future: _fetchImageWithAuth(widget.imageUrl!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 200,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasError || snapshot.data == null) {
+          return const SizedBox(
+            height: 200,
+            child: Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
+          );
+        } else {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(
+              snapshot.data!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: 200,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  String formatDate(String isoDate) {
+    try {
+      final dateTime = DateTime.parse(isoDate);
+      return DateFormat('dd-MM-yyyy').format(dateTime);
+    } catch (_) {
+      return isoDate;
+    }
+  }
+
   void _openMaps(BuildContext context) async {
-    print("Latitude: $latitude, Longitude: $longitude");
-    if (latitude == null || longitude == null) {
+    if (widget.latitude == null || widget.longitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Este evento não tem localização definida."),
-        ),
+        const SnackBar(content: Text("Este evento não tem localização definida.")),
       );
       return;
     }
@@ -201,16 +297,13 @@ class EventDetailsScreen extends StatelessWidget {
       );
     } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Não foi possível obter a sua localização."),
-        ),
+        const SnackBar(content: Text("Não foi possível obter a sua localização.")),
       );
       return;
     }
 
     final origin = '${position.latitude},${position.longitude}';
-    final destination = '$latitude,$longitude';
-
+    final destination = '${widget.latitude},${widget.longitude}';
     final url = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving',
     );
@@ -224,4 +317,26 @@ class EventDetailsScreen extends StatelessWidget {
     }
   }
 
+  Future<Uint8List?> _fetchImageWithAuth(String url) async {
+    const username = 'webdav-user';
+    const password = 'NOXtuga21!';
+    final authHeader = 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': authHeader},
+      );
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      } else {
+        print('Erro ao buscar imagem: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Erro ao carregar imagem: $e');
+      return null;
+    }
+  }
 }

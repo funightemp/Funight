@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/views/tickets/ticket_card.dart';
 import 'package:frontend/views/tickets/ticket_card.dart'; // Importe o TicketCard
 
 class TicketScreen extends StatefulWidget {
@@ -36,8 +37,9 @@ class _TicketScreenState extends State<TicketScreen>
     if (user == null) return;
 
     final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
         .collection('tickets')
-        .where('userId', isEqualTo: user.uid)
         .get();
 
     final List<Map<String, dynamic>> futuros = [];
@@ -73,7 +75,6 @@ class _TicketScreenState extends State<TicketScreen>
       }
     }
 
-    // Agora sim, podes chamar setState com as listas mutáveis
     setState(() {
       _ticketsFuturos = futuros;
       _ticketsDecorrer = aDecorrer;
@@ -88,7 +89,7 @@ class _TicketScreenState extends State<TicketScreen>
   }
 
   void _showTicketDetails(BuildContext context, Map<String, dynamic> ticket) {
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder:
@@ -169,7 +170,7 @@ class _TicketScreenState extends State<TicketScreen>
               eventDate: ticket['date'],
               eventLocation: ticket['location'],
               ticketNumber: ticket['ticketNumber'],
-              qrCodeData: ticket['qrCodeData'], // Passe os dados do QR Code
+              qrCodeData: ticket['qrCodeData'],
               backgroundColor: const Color(0xFF1E1E1E),
               textColor: _textColor,
               primaryColor: _primaryColor,

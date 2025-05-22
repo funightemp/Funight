@@ -1,5 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:frontend/views/events/event_card.dart'; // Importa o EventCard
+import 'package:frontend/models/event.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:frontend/views/events/event_card.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -9,63 +14,97 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
-  // Lista de eventos de exemplo (para visualização)
-  final List<Map<String, dynamic>> _eventos = [
-    {
-      'title': 'Concerto de Rock',
-      'imageUrl': 'https://via.placeholder.com/150', // URL de exemplo
-      'date': '2024-07-20',
-      'location': 'Estádio Nacional',
-      'price': 25.00,
-      'description': 'Um super concerto com as melhores bandas de rock!',
-    },
-    {
-      'title': 'Festa Eletrónica',
-      'imageUrl': 'https://via.placeholder.com/150', // URL de exemplo
-      'date': '2024-07-25',
-      'location': 'Club A',
-      'price': 15.00,
-      'description': 'A melhor festa de música eletrónica da cidade.',
-    },
-    {
-      'title': 'Noite de Fado',
-      'imageUrl': '', // Sem imagem
-      'date': '2024-07-28',
-      'location': 'Casa de Fados',
-      'price': null, // Gratuito
-      'description': 'Uma noite inesquecível com a alma do fado.',
-    },
-    {
-      'title': 'Festival de Verão',
-      'imageUrl': 'https://via.placeholder.com/150', // URL de exemplo
-      'date': '2024-08-10',
-      'location': 'Parque da Cidade',
-      'price': 50.00,
-      'description': 'O maior festival de verão com diversas atrações.',
-    },
-  ];
+  List<Event> _eventos = [];
+  bool _isLoading = true;
 
-  // Cores consistentes com o tema (substitua com suas cores reais)
-  final Color _backgroundColor = const Color(0xFF121212); // Cor de fundo escura
-  final Color _primaryColor = const Color(0xFFBB86FC); // Cor primária (ex: roxo)
-  final Color _textColor = Colors.white; // Cor do texto
-  final Color _cardColor = const Color(0xFF1E1E1E); // Cor dos cards
+  // Cores do tema
+  final Color _backgroundColor = const Color(0xFF121212);
+  final Color _primaryColor = const Color(0xFFBB86FC);
+  final Color _textColor = Colors.white;
+  final Color _cardColor = const Color(0xFF1E1E1E);
 
-  // Controlador para a barra de pesquisa
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    fetchEventos();
+  }
+
+  Future<void> fetchEventos() async {
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:8080/eventos'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        final eventos = data.map((e) => Event.fromJson(e)).toList();
+
+        // Obter os eventIds dos bilhetes do utilizador autenticado
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          print('Utilizador não autenticado.');
+          setState(() {
+            _eventos = eventos;
+            _isLoading = false;
+          });
+          return;
+        }
+
+        final ticketSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('tickets')
+            .get();
+
+        final Set<String> userTicketEventIds = ticketSnapshot.docs
+            .map((doc) => doc['eventId'].toString())
+            .toSet();
+
+        // Atualizar eventos com base na posse de bilhete
+        final eventosComBilhete = eventos.map((event) {
+          final hasTicket = userTicketEventIds.contains(event.id.toString());
+          return event.copyWith(hasTicket: hasTicket);
+        }).toList();
+
+        setState(() {
+          _eventos = eventosComBilhete;
+          _isLoading = false;
+        });
+      } else {
+        print('Erro ao carregar eventos: ${response.statusCode}');
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Erro na requisição: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<Set<String>> _getUserTicketEventIds() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return {};
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('tickets')
+        .get();
+
+    return snapshot.docs.map((doc) => doc['eventId'].toString()).toSet();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor, // Aplica a cor de fundo
+      backgroundColor: _backgroundColor,
       body: Column(
         children: [
+          // Barra de pesquisa e localização
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
                 Expanded(
-                  
                   child: TextField(
                     controller: _searchController,
                     style: TextStyle(color: _textColor),
@@ -90,7 +129,7 @@ class _EventsScreenState extends State<EventsScreen> {
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: () {
-                    // TODO: Implementar a lógica para obter a localização do dispositivo
+                    // lógica de localização
                     print('Obter localização do dispositivo');
                   },
                   icon: Icon(Icons.location_on, color: _primaryColor),
@@ -98,31 +137,37 @@ class _EventsScreenState extends State<EventsScreen> {
               ],
             ),
           ),
+
+          // Lista de eventos
           Expanded(
-            child: ListView.builder(
-              itemCount: _eventos.length,
-              itemBuilder: (context, index) {
-                final evento = _eventos[index];
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: EventCard( // Usa o EventCard
-                    title: evento['title'],
-                    imageUrl: evento['imageUrl'],
-                    date: evento['date'],
-                    location: evento['location'],
-                    price: evento['price'],
-                    description: evento['description'],
-                    backgroundColor: _cardColor, // Passa a cor do card
-                    textColor: _textColor,
-                    primaryColor: _primaryColor,
-                  ),
-                );
-              },
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _eventos.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Nenhum evento encontrado.',
+                          style: TextStyle(color: _textColor),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _eventos.length,
+                        itemBuilder: (context, index) {
+                          final evento = _eventos[index];
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: EventCard(
+                              event: evento,
+                              backgroundColor: _cardColor,
+                              textColor: _textColor,
+                              primaryColor: _primaryColor,
+                              hasTicket: evento.hasTicket,
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
     );
   }
 }
-

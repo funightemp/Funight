@@ -1,202 +1,171 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/views/social/friend_profile_screen.dart';
+import 'package:frontend/views/social/friend_profile_screen.dart';
 
 class AddFriendScreen extends StatefulWidget {
-  // Cores consistentes com o tema
-  final Color _backgroundColor = const Color(0xFF121212);
-  final Color _textColor = Colors.white;
-  final Color _primaryColor = const Color(0xFFBB86FC);
+  const AddFriendScreen({super.key});
 
   @override
-  _AddFriendScreenState createState() => _AddFriendScreenState();
+  State<AddFriendScreen> createState() => _AddFriendScreenState();
 }
 
 class _AddFriendScreenState extends State<AddFriendScreen> {
-  // Lista de usuários de exemplo (substitua com seus dados reais)
-  final List<Map<String, dynamic>> _users = [
-    {
-      'id': 'user1',
-      'username': 'Amigo1',
-      'avatarUrl': 'https://via.placeholder.com/40',
-      'bio': 'Fã de eventos desde sempre!',
-    },
-    {
-      'id': 'user2',
-      'username': 'Amigo2',
-      'avatarUrl': 'https://via.placeholder.com/40',
-      'bio': 'Adoro concertos e festivais.',
-    },
-    {
-      'id': 'user3',
-      'username': 'Maria3',
-      'avatarUrl': 'https://via.placeholder.com/40',
-      'bio': 'Apaixonada por música ao vivo.',
-    },
-    {
-      'id': 'user4',
-      'username': 'Carlos4',
-      'avatarUrl': 'https://via.placeholder.com/40',
-      'bio': 'Sempre à procura de novos eventos.',
-    },
-    {
-      'id': 'user5',
-      'username': 'Amigo5',
-      'avatarUrl': 'https://via.placeholder.com/40',
-      'bio': 'Gosto de todo o tipo de eventos.',
-    },
-  ];
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
 
-  // Lista de usuários filtrados
-  List<Map<String, dynamic>> _filteredUsers = [];
-
-  // Controlador para o campo de pesquisa
-  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _nonFriends = [];
 
   @override
   void initState() {
     super.initState();
-    _filteredUsers = List.from(_users); // Inicialmente, todos os usuários são exibidos
+    _loadNonFriends();
   }
 
-  // Método para filtrar usuários com base no texto da pesquisa
-  void _filterUsers(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredUsers = List.from(_users); // Se a pesquisa estiver vazia, mostra todos
-      } else {
-        _filteredUsers = _users.where((user) {
-          return user['username'].toLowerCase().contains(query.toLowerCase());
-        }).toList();
+  Future<void> _loadNonFriends() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final allUsersSnapshot = await _firestore.collection('users').get();
+    final friendsSnapshot = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('friends')
+        .get();
+
+    final friendIds = friendsSnapshot.docs.map((doc) => doc.id).toSet();
+
+    final nonFriends = allUsersSnapshot.docs
+        .where((doc) => doc.id != user.uid && !friendIds.contains(doc.id))
+        .map((doc) {
+      final data = doc.data();
+      return {
+        'id': doc.id,
+        'username': data['name'] ?? 'Sem nome',
+        'avatarUrl': data['photoUrl'] ?? '',
+      };
+    }).toList();
+
+    setState(() => _nonFriends = nonFriends);
+  }
+
+  Future<void> _addFriend(String friendId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final alreadyFriend = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('friends')
+          .doc(friendId)
+          .get();
+
+      if (alreadyFriend.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Já são amigos.')),
+        );
+        return;
       }
-    });
+
+      // Adiciona nas duas direções
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('friends')
+          .doc(friendId)
+          .set({});
+      await _firestore
+          .collection('users')
+          .doc(friendId)
+          .collection('friends')
+          .doc(user.uid)
+          .set({});
+
+      // Cria notificação
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final userData = userDoc.data();
+      final fromUserName = userData?['name'] ?? 'Utilizador';
+
+      await _firestore
+          .collection('users')
+          .doc(friendId)
+          .collection('notifications')
+          .add({
+        'type': 'follow',
+        'fromUserId': user.uid,
+        'fromUserName': fromUserName,
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+        'read': false,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Amigo adicionado!')),
+      );
+
+      Navigator.pop(context, true); // Sinaliza sucesso
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao adicionar: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    const backgroundColor = Color(0xFF121212);
+    const textColor = Colors.white;
+
     return Scaffold(
-      backgroundColor: widget._backgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text('Adicionar Amigo', style: TextStyle(color: widget._textColor)),
-        backgroundColor: widget._backgroundColor,
-        iconTheme: IconThemeData(color: widget._textColor),
+        title: const Text('Adicionar Amigo', style: TextStyle(color: textColor)),
+        backgroundColor: backgroundColor,
+        iconTheme: const IconThemeData(color: textColor),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: _searchController,
-              style: TextStyle(color: widget._textColor),
-              decoration: InputDecoration(
-                labelText: 'Pesquisar por nome',
-                labelStyle: TextStyle(color: Colors.grey),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: widget._primaryColor),
-                  borderRadius: BorderRadius.circular(10.0),
+        padding: const EdgeInsets.all(12),
+        child: _nonFriends.isEmpty
+            ? const Center(
+                child: Text(
+                  'Sem utilizadores disponíveis para adicionar.',
+                  style: TextStyle(color: Colors.grey),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              onChanged: _filterUsers, // Chama o método de filtragem ao digitar
-            ),
-            const SizedBox(height: 20.0),
-            Expanded(
-              // Use Expanded para que o ListView.builder ocupe o espaço restante
-              child: _buildUserList(), // Exibe a lista de usuários filtrados
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Método para construir a lista de usuários
-  Widget _buildUserList() {
-  if (_filteredUsers.isEmpty) {
-    return Center(
-      child: Text(
-        'Nenhum usuário encontrado.',
-        style: TextStyle(color: widget._textColor),
-      ),
-    );
-  }
-    return ListView.builder(
-      itemCount: _filteredUsers.length,
-      itemBuilder: (context, index) {
-        final user = _filteredUsers[index];
-        return _buildUserCard(context, user);
-      },
-    );
-  }
-
-  // Método para construir o card de cada usuário
-  Widget _buildUserCard(BuildContext context, Map<String, dynamic> user) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 3,
-      color: const Color(0xFF1E1E1E), // Cor dos cards
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundImage: NetworkImage(user['avatarUrl']),
-              radius: 25,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user['username'],
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: widget._textColor,
-                      fontSize: 16,
+              )
+            : ListView.builder(
+                itemCount: _nonFriends.length,
+                itemBuilder: (context, index) {
+                  final user = _nonFriends[index];
+                  return ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FriendProfileScreen(friendId: user['id']),
+                        ),
+                      );
+                    },
+                    leading: CircleAvatar(
+                      backgroundImage: user['avatarUrl'].isNotEmpty
+                          ? NetworkImage(user['avatarUrl'])
+                          : null,
+                      child: user['avatarUrl'].isEmpty
+                          ? const Icon(Icons.person)
+                          : null,
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    user['bio'],
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
+                    title: Text(user['username'], style: const TextStyle(color: textColor)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.person_add, color: Colors.green),
+                      onPressed: () async {
+                        await _addFriend(user['id']);
+                      },
+                    ),
+                  );
+                },
               ),
-            ),
-            const SizedBox(width: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget._primaryColor, // Cor de fundo do botão
-                foregroundColor: widget._textColor, // Cor do texto do botão
-              ),
-              onPressed: () {
-                // TODO: Implementar a lógica para adicionar amigo
-                print('Adicionar amigo ${user['username']}');
-                 showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Pedido Enviado'),
-                    content: Text('Pedido de amizade enviado para ${user['username']}!'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                           Navigator.of(context).pop();
-                        },
-                        child: const Text('Ok'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              child: const Text('Adicionar'),
-            ),
-          ],
-        ),
       ),
     );
   }
 }
-

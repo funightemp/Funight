@@ -16,28 +16,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Fundo da tela
+          // Background
           Image.asset('assets/funight_bg.png', fit: BoxFit.cover),
           Container(color: Colors.black.withOpacity(0.6)),
+
+          // Seta no topo esquerdo
+          Positioned(
+            top: 40,
+            left: 10,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
               children: [
-                const SizedBox(height: 60),
-
-                // Seta para voltar
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 20),
+                const SizedBox(height: 100),
 
                 // Logo
                 Image.asset('assets/logo_white_cropped.png', width: 200),
@@ -45,7 +44,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                 // Texto explicativo
                 const Text(
-                  "Enter your e-mail to reset your password",
+                  "Introduz o e-mail para recuperar a password",
                   style: TextStyle(color: Colors.white, fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -58,10 +57,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 30),
 
                 // Botão para enviar o reset de senha
-                buildPrimaryButton('Reset Password', () {
+                buildPrimaryButton('Recuperar Password', () {
                   // Aqui você pode adicionar a lógica para enviar o e-mail de reset de senha
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Password reset link sent to your email")),
+                    const SnackBar(content: Text("O link para recuperar a password foi enviado para o e-mail")),
                   );
                 }),
               ],
